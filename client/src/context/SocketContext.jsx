@@ -4,48 +4,51 @@ import { io } from 'socket.io-client';
 const SocketContext = createContext();
 
 export const SocketProvider = ({ children }) => {
- const [socket, setSocket] = useState(null);
- const [eventUpdates, setEventUpdates] = useState({});
+  const [socket, setSocket] = useState(null);
+  const [eventUpdates, setEventUpdates] = useState({});
 
- useEffect(() => {
- // Connect to Socket.io backend
- const newSocket = io(window.location.origin, {
- reconnectionAttempts: 5,
- transports: ['websocket', 'polling'],
- });
+  useEffect(() => {
+    const newSocket = io('https://campus-event-manager-1-xz4u.onrender.com', {
+      reconnectionAttempts: 5,
+      transports: ['websocket', 'polling'],
+    });
 
- newSocket.on('connect', () => {
- // console.log('Socket connected:', newSocket.id);
- });
+    newSocket.on('connect', () => {
+      console.log('Socket connected:', newSocket.id);
+    });
 
- newSocket.on('global_event_update', (update) => {
- setEventUpdates((prev) => ({
- ...prev,
- [update.eventId]: update,
- }));
- });
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
+    });
 
- newSocket.on('attendee_update', (update) => {
- setEventUpdates((prev) => ({
- ...prev,
- [update.eventId]: update,
- }));
- });
+    newSocket.on('global_event_update', (update) => {
+      setEventUpdates((prev) => ({
+        ...prev,
+        [update.eventId]: update,
+      }));
+    });
 
- setSocket(newSocket);
+    newSocket.on('attendee_update', (update) => {
+      setEventUpdates((prev) => ({
+        ...prev,
+        [update.eventId]: update,
+      }));
+    });
 
- return () => {
- newSocket.disconnect();
- };
- }, []);
+    setSocket(newSocket);
 
- return (
- <SocketContext.Provider value={{ socket, eventUpdates }}>
- {children}
- </SocketContext.Provider>
- );
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+
+  return (
+    <SocketContext.Provider value={{ socket, eventUpdates }}>
+      {children}
+    </SocketContext.Provider>
+  );
 };
 
 export const useSocket = () => {
- return useContext(SocketContext);
+  return useContext(SocketContext);
 };
